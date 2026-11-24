@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="dashboard">
+  <meta name="design-style" content="neon_noir">
+  <title>CAMPUS CONNECT — Sri Lankan University 3D Academic Collaboration</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <!-- TOP HEADER -->
+    <header class="top-header">
+      <div class="brand-block">
+        <div class="brand-orb" aria-hidden="true">
+          <i data-lucide="orbit"></i>
+        </div>
+        <div>
+          <h1 class="brand-title">CAMPUS <span>CONNECT</span></h1>
+          <p class="brand-tagline">Connect Ideas. Build Knowledge. Together. — Sri Lanka</p>
+        </div>
+      </div>
+
+      <nav class="main-nav" aria-label="Primary Spaces">
+        <button type="button" class="nav-btn is-active" id="nav-home" onclick="switchView('home')">
+          <i data-lucide="compass" aria-hidden="true"></i> Virtual Campus
+        </button>
+        <button type="button" class="nav-btn" id="nav-assignments" onclick="switchView('assignments')">
+          <i data-lucide="book-open-check" aria-hidden="true"></i> Assignments
+        </button>
+        <button type="button" class="nav-btn" id="nav-research" onclick="switchView('research')">
+          <i data-lucide="microscope" aria-hidden="true"></i> Research Hub
+        </button>
+        <button type="button" class="nav-btn is-meeting-cta" id="nav-meeting" onclick="switchView('meeting')">
+          <i data-lucide="cuboid" aria-hidden="true"></i> 3D Meeting Room
+        </button>
+        <button type="button" class="nav-btn" id="nav-lab" onclick="switchView('lab')">
+          <i data-lucide="rocket" aria-hidden="true"></i> Collab Lab
+        </button>
+      </nav>
+
+      <div class="header-status-group">
+        <div class="student-chip" id="profile-summary-chip">
+          <span class="status-dot" aria-hidden="true"></span>
+          <span id="header-user-label">Kasun Perera • UOM</span>
+        </div>
+        <button type="button" class="btn btn-ghost" onclick="exportWorkspaceSummary()">
+          <i data-lucide="download" aria-hidden="true"></i> Export
+        </button>
+        <button type="button" class="btn btn-ghost" id="btn-reset-workspace" onclick="handleResetWorkspace(this)">
+          Reset
+        </button>
+      </div>
+    </header>
+
+    <div class="feedback-banner" id="global-feedback" role="status" aria-live="polite">
+      <span id="global-feedback-text"></span>
+      <button type="button" class="btn btn-ghost" onclick="dismissFeedback()">Dismiss</button>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 1. HOME PAGE: 3D VIRTUAL UNIVERSITY CAMPUS                -->
+    <!-- ========================================================= -->
+    <section class="view-section is-active" id="view-home" aria-labelledby="home-heading">
+      <div class="home-hero-grid">
+        <!-- 3D Virtual Campus Viewport -->
+        <div class="glass-panel is-cyan">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <div>
+              <span class="kicker">Interactive 3D Digital Campus • Sri Lanka</span>
+              <h2 class="display-title" id="home-heading">Welcome to Campus Connect</h2>
+            </div>
+            <button type="button" class="btn btn-cyan" onclick="enterSelectedCampusLocation()">
+              <i data-lucide="door-open" aria-hidden="true"></i> Enter Selected Zone
+            </button>
+          </div>
+          <p class="muted-copy" style="margin-bottom: var(--space-md);">
+            Explore the futuristic 3D quad linking Sri Lankan university students from Moratuwa, Colombo, Peradeniya, Jayewardenepura, Kelaniya, Ruhuna, and SLIIT. Click any glowing 3D pavilion or exploration button below to focus the campus drone and launch directly into that academic space.
+          </p>
+
+          <div class="stage-wrapper">
+            <canvas id="campus-3d-stage" aria-label="Interactive 3D Virtual University Campus"></canvas>
+            <div class="stage-overlay-top">
+              <div class="hud-pill">
+                <span class="kicker" id="campus-focus-kicker">Focused Location</span>
+                <div class="card-title" id="campus-focus-title">Virtual Meeting Center</div>
+                <div class="mono-meta" id="campus-focus-desc">38 active 3D rooms • WASD avatar simulation</div>
+              </div>
+              <div class="hud-pill row-wrap">
+                <span class="badge is-positive">Live Quad • 1,428 Online</span>
+                <button type="button" class="btn btn-ghost" onclick="resetCampusCamera()">Reset Orbit</button>
+              </div>
+            </div>
+            <div class="stage-overlay-bottom">
+              <div class="hud-pill mono-meta">Drag to orbit • Scroll to zoom • Click a 3D pavilion to inspect</div>
+            </div>
+          </div>
+
+          <div class="campus-location-strip" role="group" aria-label="Five Campus Locations">
+            <button type="button" class="location-btn" id="loc-btn-assignments" onclick="focusCampusLocation('assignments', true)">
+              <div>
+                <div class="mono-meta">Zone 01</div>
+                <strong>Assignment Hub</strong>
+              </div>
+              <i data-lucide="book-open-check" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="location-btn" id="loc-btn-research" onclick="focusCampusLocation('research', true)">
+              <div>
+                <div class="mono-meta">Zone 02</div>
+                <strong>Research Library</strong>
+              </div>
+              <i data-lucide="microscope" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="location-btn is-focused" id="loc-btn-meeting" onclick="focusCampusLocation('meeting', true)">
+              <div>
+                <div class="mono-meta">Zone 03</div>
+                <strong>Virtual Meeting Center</strong>
+              </div>
+              <i data-lucide="cuboid" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="location-btn" id="loc-btn-lounge" onclick="focusCampusLocation('lounge', true)">
+              <div>
+                <div class="mono-meta">Zone 04</div>
+                <strong>Student Lounge</strong>
+              </div>
+              <i data-lucide="coffee" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="location-btn" id="loc-btn-lab" onclick="focusCampusLocation('lab', true)">
+              <div>
+                <div class="mono-meta">Zone 05</div>
+                <strong>Project Collab Lab</strong>
+              </div>
+              <i data-lucide="rocket" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Campus Profile & Sri Lankan Uni Pulse -->
+        <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-md);">
+          <div>
+            <span class="kicker is-purple">Student Identity & Lounge</span>
+            <h2 class="section-title">Your Campus Passport</h2>
+            <p class="muted-copy" style="margin-top: var(--space-xs);">
+              Customize your student avatar identity before entering assignments or the 3D Virtual Meeting Room.
+            </p>
+          </div>
+
+          <div class="form-grid">
+            <div class="field">
+              <label for="passport-name">Display Name</label>
+              <input id="passport-name" class="input" type="text" value="Kasun Perera" oninput="updateStudentPassport()">
+            </div>
+            <div class="field">
+              <label for="passport-uni">Sri Lankan University</label>
+              <select id="passport-uni" class="select" onchange="updateStudentPassport()">
+                <option value="UOM">Univ. of Moratuwa (UOM)</option>
+                <option value="UOC">Univ. of Colombo (UOC)</option>
+                <option value="UOP">Univ. of Peradeniya (UOP)</option>
+                <option value="USJP">Univ. of Sri Jayewardenepura (USJP)</option>
+                <option value="UOK">Univ. of Kelaniya (UOK)</option>
+                <option value="UOR">Univ. of Ruhuna (UOR)</option>
+                <option value="SLIIT">SLIIT</option>
+                <option value="IIT">IIT Sri Lanka</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="passport-faculty">Faculty / Stream</label>
+              <select id="passport-faculty" class="select" onchange="updateStudentPassport()">
+                <option value="IT & Computing">IT & Computing</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Business & Management">Business & Management</option>
+                <option value="Physical & Bio Science">Physical & Bio Science</option>
+                <option value="Media & Design">Media & Design</option>
+                <option value="Arts & Humanities">Arts & Humanities</option>
+                <option value="Education">Education</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="glass-panel-sub">
+            <div class="row-between" style="margin-bottom: var(--space-sm);">
+              <span class="kicker">Active Inter-University Pulse</span>
+              <span class="mono-meta">Live Semester 2026</span>
+            </div>
+            <div class="stack-list" id="uni-stats-bars">
+              <div class="uni-bar-row">
+                <span>UOM</span>
+                <div class="uni-bar-track"><div class="uni-bar-fill" style="width: 92%;"></div></div>
+                <span class="mono-meta">4,120</span>
+              </div>
+              <div class="uni-bar-row">
+                <span>UOC</span>
+                <div class="uni-bar-track"><div class="uni-bar-fill" style="width: 81%;"></div></div>
+                <span class="mono-meta">3,580</span>
+              </div>
+              <div class="uni-bar-row">
+                <span>UOP</span>
+                <div class="uni-bar-track"><div class="uni-bar-fill" style="width: 76%;"></div></div>
+                <span class="mono-meta">3,290</span>
+              </div>
+              <div class="uni-bar-row">
+                <span>USJP</span>
+                <div class="uni-bar-track"><div class="uni-bar-fill" style="width: 64%;"></div></div>
+                <span class="mono-meta">2,740</span>
+              </div>
+              <div class="uni-bar-row">
+                <span>SLIIT / IIT</span>
+                <div class="uni-bar-track"><div class="uni-bar-fill" style="width: 58%;"></div></div>
+                <span class="mono-meta">2,460</span>
+              </div>
+              <div class="uni-bar-row">
+                <span>UOK &amp; UOR</span>
+                <div class="uni-bar-track"><div class="uni-bar-fill" style="width: 51%;"></div></div>
+                <span class="mono-meta">2,230</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row-wrap">
+            <button type="button" class="btn btn-cyan" style="flex: 1;" onclick="switchView('meeting')">
+              <i data-lucide="video" aria-hidden="true"></i> Launch 3D Meeting Room
+            </button>
+            <button type="button" class="btn" style="flex: 1;" onclick="switchView('lab')">
+              <i data-lucide="users" aria-hidden="true"></i> Open Student Lounge
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sri Lankan University KPI Strip -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="mono-meta">Sri Lankan Students Connected</span>
+          <div class="kpi-value">18,420</div>
+          <span class="mono-meta">17 UGC &amp; Non-State Universities</span>
+        </div>
+        <div class="kpi-card">
+          <span class="mono-meta">Assignment Discussions</span>
+          <div class="kpi-value is-purple" id="kpi-assignments-count">1,284</div>
+          <span class="mono-meta">7 Academic Faculties Active</span>
+        </div>
+        <div class="kpi-card">
+          <span class="mono-meta">Shared Thesis &amp; Research</span>
+          <div class="kpi-value" id="kpi-research-count">412</div>
+          <span class="mono-meta">Cross-Campus Co-Authors Matched</span>
+        </div>
+        <div class="kpi-card">
+          <span class="mono-meta">Live 3D Study Rooms</span>
+          <div class="kpi-value is-purple" id="kpi-meetings-count">38</div>
+          <span class="mono-meta">Interactive Tables &amp; Whiteboards</span>
+        </div>
+      </div>
+
+      <!-- Featured Discussions, Upcoming Meetings, Shared Research -->
+      <div class="three-col-grid">
+        <div class="glass-panel">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <div>
+              <span class="kicker">Assignment Hub</span>
+              <h3 class="section-title">Featured Discussions</h3>
+            </div>
+            <button type="button" class="btn btn-ghost" onclick="switchView('assignments')">View All</button>
+          </div>
+          <div class="stack-list" id="home-featured-discussions"></div>
+        </div>
+
+        <div class="glass-panel is-cyan">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <div>
+              <span class="kicker">3D Meeting Center</span>
+              <h3 class="section-title">Upcoming &amp; Live Rooms</h3>
+            </div>
+            <button type="button" class="btn btn-cyan" onclick="switchView('meeting')">Enter 3D</button>
+          </div>
+          <div class="stack-list" id="home-upcoming-meetings"></div>
+        </div>
+
+        <div class="glass-panel">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <div>
+              <span class="kicker is-purple">Research Library</span>
+              <h3 class="section-title">Shared Research</h3>
+            </div>
+            <button type="button" class="btn btn-ghost" onclick="switchView('research')">Explore</button>
+          </div>
+          <div class="stack-list" id="home-shared-research"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 2. ASSIGNMENT DISCUSSION PAGE                             -->
+    <!-- ========================================================= -->
+    <section class="view-section" id="view-assignments" aria-labelledby="assignments-heading">
+      <div class="glass-panel">
+        <div class="row-between" style="margin-bottom: var(--space-md);">
+          <div>
+            <span class="kicker">Collaborative Problem Solving</span>
+            <h2 class="section-title" id="assignments-heading">Assignment Discussion Hub</h2>
+            <p class="muted-copy">Filter by Sri Lankan university subject streams, share notes or lab sheets, reply in threads, and match with peers tackling the same module.</p>
+          </div>
+          <button type="button" class="btn btn-cyan" onclick="toggleAssignmentCreator()">
+            <i data-lucide="plus-circle" aria-hidden="true"></i> Create Assignment Topic
+          </button>
+        </div>
+
+        <!-- Subject Category Chips -->
+        <div class="chip-row" id="assignment-category-chips" role="group" aria-label="Subject Categories" style="margin-bottom: var(--space-md);"></div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="assignment-search">Search Topics or Module Codes</label>
+            <input id="assignment-search" class="input" type="text" placeholder="e.g. Distributed Systems, Thermodynamics, IFRS..." oninput="renderAssignments()">
+          </div>
+          <div class="field">
+            <label for="assignment-uni-filter">Filter by University</label>
+            <select id="assignment-uni-filter" class="select" onchange="renderAssignments()">
+              <option value="ALL">All Sri Lankan Universities</option>
+              <option value="UOM">Univ. of Moratuwa (UOM)</option>
+              <option value="UOC">Univ. of Colombo (UOC)</option>
+              <option value="UOP">Univ. of Peradeniya (UOP)</option>
+              <option value="USJP">Univ. of Sri Jayewardenepura (USJP)</option>
+              <option value="UOK">Univ. of Kelaniya (UOK)</option>
+              <option value="UOR">Univ. of Ruhuna (UOR)</option>
+              <option value="SLIIT">SLIIT</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Collapsible Create Assignment Form -->
+        <div class="glass-panel-sub hidden-panel" id="assignment-creator-panel" style="margin-top: var(--space-md);">
+          <div class="row-between" style="margin-bottom: var(--space-sm);">
+            <h3 class="card-title">Post a New Assignment Discussion</h3>
+            <button type="button" class="btn btn-ghost" onclick="toggleAssignmentCreator()">Close</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="new-assign-title">Assignment Title</label>
+              <input id="new-assign-title" class="input" type="text" placeholder="e.g. CS3042 Database Indexing Lab">
+            </div>
+            <div class="field">
+              <label for="new-assign-cat">Subject Category</label>
+              <select id="new-assign-cat" class="select">
+                <option value="IT">IT</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Business">Business</option>
+                <option value="Science">Science</option>
+                <option value="Media">Media</option>
+                <option value="Arts & Humanities">Arts &amp; Humanities</option>
+                <option value="Education">Education</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="new-assign-module">Module Code</label>
+              <input id="new-assign-module" class="input" type="text" placeholder="e.g. CS3042">
+            </div>
+            <div class="field">
+              <label for="new-assign-doc">Shared Document Filename (Optional)</label>
+              <input id="new-assign-doc" class="input" type="text" placeholder="e.g. BTree_Notes_Week05.pdf">
+            </div>
+          </div>
+          <div class="field" style="margin-top: var(--space-md);">
+            <label for="new-assign-body">Question / Collaboration Prompt</label>
+            <textarea id="new-assign-body" class="textarea" placeholder="Explain what part of the assignment you are solving or where peers can help..."></textarea>
+          </div>
+          <div class="row-between" style="margin-top: var(--space-md);">
+            <span class="mono-meta" id="new-assign-status"></span>
+            <button type="button" class="btn btn-cyan" onclick="createAssignmentTopic()">Publish Topic</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Two-column Split: Topic List + Selected Thread Detail & Peer Match -->
+      <div class="two-col-split">
+        <div class="glass-panel">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <h3 class="card-title">Active Threads (<span id="assignment-list-count">0</span>)</h3>
+            <span class="mono-meta">Select a topic to open replies &amp; docs</span>
+          </div>
+          <div class="stack-list" id="assignment-thread-list"></div>
+        </div>
+
+        <div class="glass-panel is-cyan" id="assignment-detail-panel"></div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 3. RESEARCH AND THESIS HUB                                -->
+    <!-- ========================================================= -->
+    <section class="view-section" id="view-research" aria-labelledby="research-heading">
+      <div class="glass-panel">
+        <div class="row-between" style="margin-bottom: var(--space-md);">
+          <div>
+            <span class="kicker is-purple">Undergraduate &amp; Postgraduate Inquiry</span>
+            <h2 class="section-title" id="research-heading">Research &amp; Thesis Hub</h2>
+            <p class="muted-copy">Share thesis proposals, discover cross-university research partners, review methodologies, and filter by academic field, Sri Lankan university, and collaboration interest.</p>
+          </div>
+          <button type="button" class="btn" onclick="toggleResearchCreator()">
+            <i data-lucide="sparkles" aria-hidden="true"></i> Share Research Idea
+          </button>
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label for="research-search">Search Thesis Topics</label>
+            <input id="research-search" class="input" type="text" placeholder="e.g. Sinhala NLP, Solar Microgrid, Mangrove..." oninput="renderResearch()">
+          </div>
+          <div class="field">
+            <label for="research-field-filter">Research Field</label>
+            <select id="research-field-filter" class="select" onchange="renderResearch()">
+              <option value="ALL">All Fields</option>
+              <option value="AI & Computing">AI &amp; Computing</option>
+              <option value="Engineering & Energy">Engineering &amp; Energy</option>
+              <option value="Science & AgriTech">Science &amp; AgriTech</option>
+              <option value="Business & FinTech">Business &amp; FinTech</option>
+              <option value="Media & Humanities">Media &amp; Humanities</option>
+              <option value="Education Tech">Education Tech</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="research-uni-filter">University</label>
+            <select id="research-uni-filter" class="select" onchange="renderResearch()">
+              <option value="ALL">All Universities</option>
+              <option value="UOM">Univ. of Moratuwa (UOM)</option>
+              <option value="UOC">Univ. of Colombo (UOC)</option>
+              <option value="UOP">Univ. of Peradeniya (UOP)</option>
+              <option value="USJP">Univ. of Sri Jayewardenepura (USJP)</option>
+              <option value="UOK">Univ. of Kelaniya (UOK)</option>
+              <option value="UOR">Univ. of Ruhuna (UOR)</option>
+              <option value="SLIIT">SLIIT</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="research-interest-filter">Collaboration Interest</label>
+            <select id="research-interest-filter" class="select" onchange="renderResearch()">
+              <option value="ALL">All Interests</option>
+              <option value="Co-Author Needed">Co-Author Needed</option>
+              <option value="Data Collection Partner">Data Collection Partner</option>
+              <option value="Methodology Review">Methodology Review</option>
+              <option value="Hardware / Lab Access">Hardware / Lab Access</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="glass-panel-sub hidden-panel" id="research-creator-panel" style="margin-top: var(--space-md);">
+          <div class="row-between" style="margin-bottom: var(--space-sm);">
+            <h3 class="card-title">Submit Research or Thesis Proposal</h3>
+            <button type="button" class="btn btn-ghost" onclick="toggleResearchCreator()">Close</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="new-res-title">Thesis / Paper Title</label>
+              <input id="new-res-title" class="input" type="text" placeholder="e.g. Low-Resource Sinhala-Tamil Legal Summarizer">
+            </div>
+            <div class="field">
+              <label for="new-res-field">Research Field</label>
+              <select id="new-res-field" class="select">
+                <option value="AI & Computing">AI &amp; Computing</option>
+                <option value="Engineering & Energy">Engineering &amp; Energy</option>
+                <option value="Science & AgriTech">Science &amp; AgriTech</option>
+                <option value="Business & FinTech">Business &amp; FinTech</option>
+                <option value="Media & Humanities">Media &amp; Humanities</option>
+                <option value="Education Tech">Education Tech</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="new-res-interest">Partner Need</label>
+              <select id="new-res-interest" class="select">
+                <option value="Co-Author Needed">Co-Author Needed</option>
+                <option value="Data Collection Partner">Data Collection Partner</option>
+                <option value="Methodology Review">Methodology Review</option>
+                <option value="Hardware / Lab Access">Hardware / Lab Access</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="margin-top: var(--space-md);">
+            <label for="new-res-abstract">Abstract &amp; Research Gap</label>
+            <textarea id="new-res-abstract" class="textarea" placeholder="Summarize your hypothesis, dataset or experiment plan, and what partner expertise you seek..."></textarea>
+          </div>
+          <div class="row-between" style="margin-top: var(--space-md);">
+            <span class="mono-meta" id="new-res-status"></span>
+            <button type="button" class="btn" onclick="createResearchIdea()">Publish to Research Hub</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="two-col-split">
+        <div class="card-grid" id="research-cards-grid"></div>
+        <div class="glass-panel is-cyan" id="research-detail-panel"></div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 4. 3D VIRTUAL MEETING ROOM (MAIN FEATURE)                 -->
+    <!-- ========================================================= -->
+    <section class="view-section" id="view-meeting" aria-labelledby="meeting-heading">
+      <!-- Room Setup / Join & Switcher Strip -->
+      <div class="glass-panel">
+        <div class="row-between" style="margin-bottom: var(--space-md);">
+          <div>
+            <span class="kicker">Main Feature • Real-Time 3D Collaboration Environment</span>
+            <h2 class="section-title" id="meeting-heading">3D Virtual Meeting Room</h2>
+          </div>
+          <div class="row-wrap">
+            <span class="badge is-cyan" id="meeting-room-code-badge">Room: SL-ML-402</span>
+            <button type="button" class="btn btn-ghost" onclick="toggleRoomSetupPanel()">
+              <i data-lucide="settings-2" aria-hidden="true"></i> Room Setup / Join
+            </button>
+            <button type="button" class="btn btn-danger" onclick="exitMeetingRoom()">
+              <i data-lucide="log-out" aria-hidden="true"></i> Exit Meeting
+            </button>
+          </div>
+        </div>
+
+        <div class="glass-panel-sub hidden-panel" id="room-setup-panel" style="margin-bottom: var(--space-md);">
+          <div class="row-between" style="margin-bottom: var(--space-sm);">
+            <h3 class="card-title">Create or Join a Sri Lankan Study Room</h3>
+            <button type="button" class="btn btn-ghost" onclick="toggleRoomSetupPanel()">Close</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="setup-room-select">Active Campus Rooms</label>
+              <select id="setup-room-select" class="select" onchange="joinPresetRoom(this.value)">
+                <option value="SL-ML-402">SL-ML-402 — Sinhala-Tamil NLP Capstone (UOM + UOC)</option>
+                <option value="UOM-EE-209">UOM-EE-209 — Hybrid Solar Microgrid Simulation</option>
+                <option value="UOC-BUS-311">UOC-BUS-311 — Colombo FinTech Regulatory Review</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="setup-custom-room">Create Custom Room Name</label>
+              <input id="setup-custom-room" class="input" type="text" placeholder="e.g. Peradeniya BioTech Journal Club">
+            </div>
+            <div class="field">
+              <label for="setup-avatar-color">Your Avatar Neon Aura</label>
+              <select id="setup-avatar-color" class="select" onchange="updateAvatarColor(this.value)">
+                <option value="cyan">Electric Cyan</option>
+                <option value="purple">Neon Purple</option>
+                <option value="emerald">Cyber Emerald</option>
+                <option value="gold">Solar Amber</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" class="btn btn-cyan" style="width: 100%;" onclick="createCustomMeetingRoom()">Create &amp; Enter Room</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Immersive 3D Viewport + Side Floating HUD -->
+        <div class="meeting-workspace">
+          <div class="stage-wrapper">
+            <canvas id="meeting-3d-stage" aria-label="Immersive 3D Virtual Meeting Room"></canvas>
+
+            <!-- Top Floating Overlay -->
+            <div class="stage-overlay-top">
+              <div class="hud-pill">
+                <span class="kicker" id="meeting-room-topic-kicker">Active Session</span>
+                <div class="card-title" id="meeting-room-title">Sinhala-Tamil NLP Capstone Sync</div>
+                <div class="mono-meta" id="meeting-proximity-hint">Walk with WASD • Approach Table, Screen, or Whiteboard</div>
+              </div>
+
+              <div class="hud-pill row-wrap">
+                <button type="button" class="btn btn-ghost" onclick="setMeetingCameraMode('follow')">Follow Avatar</button>
+                <button type="button" class="btn btn-ghost" onclick="setMeetingCameraMode('table')">Table View</button>
+                <button type="button" class="btn btn-ghost" onclick="setMeetingCameraMode('whiteboard')">Whiteboard View</button>
+                <button type="button" class="btn btn-ghost" onclick="setMeetingCameraMode('screen')">Screen View</button>
+              </div>
+            </div>
+
+            <!-- Bottom Floating Overlay: WASD Pad & Quick Actions -->
+            <div class="stage-overlay-bottom">
+              <div class="hud-pill" style="display: flex; align-items: center; gap: var(--space-md);">
+                <div class="wasd-pad" aria-label="Avatar Movement Controls">
+                  <span></span>
+                  <button type="button" class="wasd-key" id="key-w" onmousedown="setMoveKey('w', true)" onmouseup="setMoveKey('w', false)" onmouseleave="setMoveKey('w', false)" ontouchstart="setMoveKey('w', true)" ontouchend="setMoveKey('w', false)">W</button>
+                  <span></span>
+                  <button type="button" class="wasd-key" id="key-a" onmousedown="setMoveKey('a', true)" onmouseup="setMoveKey('a', false)" onmouseleave="setMoveKey('a', false)" ontouchstart="setMoveKey('a', true)" ontouchend="setMoveKey('a', false)">A</button>
+                  <button type="button" class="wasd-key" id="key-s" onmousedown="setMoveKey('s', true)" onmouseup="setMoveKey('s', false)" onmouseleave="setMoveKey('s', false)" ontouchstart="setMoveKey('s', true)" ontouchend="setMoveKey('s', false)">S</button>
+                  <button type="button" class="wasd-key" id="key-d" onmousedown="setMoveKey('d', true)" onmouseup="setMoveKey('d', false)" onmouseleave="setMoveKey('d', false)" ontouchstart="setMoveKey('d', true)" ontouchend="setMoveKey('d', false)">D</button>
+                </div>
+                <div>
+                  <div class="mono-meta"><strong>W A S D</strong> Move Avatar</div>
+                  <div class="mono-meta">State: <span id="avatar-anim-status">Idle at Quad</span></div>
+                </div>
+              </div>
+
+              <div class="hud-pill row-wrap">
+                <button type="button" class="btn btn-ghost" onclick="triggerAvatarAction('wave')">Wave</button>
+                <button type="button" class="btn btn-ghost" onclick="triggerAvatarAction('raise')">Raise Hand</button>
+                <button type="button" class="btn btn-cyan" id="btn-sit-toggle" onclick="toggleAvatarSeat()">Sit at Table</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating Glassmorphism Side Panel: Participants + Live Chat -->
+          <div class="glass-panel meeting-side-hud">
+            <div class="hud-tabs">
+              <button type="button" class="btn btn-cyan" id="tab-btn-chat" onclick="switchMeetingSideTab('chat')">
+                <i data-lucide="message-square" aria-hidden="true"></i> Chat
+              </button>
+              <button type="button" class="btn btn-ghost" id="tab-btn-participants" onclick="switchMeetingSideTab('participants')">
+                <i data-lucide="users" aria-hidden="true"></i> Peers (<span id="participant-count">5</span>)
+              </button>
+            </div>
+
+            <div id="meeting-chat-panel" style="display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; gap: var(--space-sm);">
+              <div class="chat-feed" id="meeting-chat-feed"></div>
+              <div class="field">
+                <label for="meeting-chat-input">Send Room Message</label>
+                <div class="row-wrap" style="flex-wrap: nowrap;">
+                  <input id="meeting-chat-input" class="input" type="text" placeholder="Share a note or question..." onkeydown="if(event.key==='Enter'){sendMeetingChat();}">
+                  <button type="button" class="btn btn-cyan" onclick="sendMeetingChat()">Send</button>
+                </div>
+              </div>
+            </div>
+
+            <div id="meeting-participants-panel" class="hidden-panel" style="flex-direction: column; flex: 1 1 auto; overflow-y: auto; gap: var(--space-sm);">
+              <div class="stack-list" id="meeting-participants-list"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Floating Control Bar -->
+        <div class="glass-panel-sub meeting-control-bar" style="margin-top: var(--space-md);">
+          <div class="row-wrap">
+            <button type="button" class="btn btn-cyan" id="btn-mic-toggle" onclick="toggleMediaState('mic')">
+              <i data-lucide="mic" aria-hidden="true"></i> Mic: On
+            </button>
+            <button type="button" class="btn btn-cyan" id="btn-cam-toggle" onclick="toggleMediaState('cam')">
+              <i data-lucide="video" aria-hidden="true"></i> Cam: On
+            </button>
+            <button type="button" class="btn" id="btn-screen-slide" onclick="cycleDigitalScreenSlide()">
+              <i data-lucide="monitor" aria-hidden="true"></i> Next Digital Screen Slide
+            </button>
+            <button type="button" class="btn btn-cyan" onclick="toggleWhiteboardPanel()">
+              <i data-lucide="pen-tool" aria-hidden="true"></i> Virtual Whiteboard
+            </button>
+          </div>
+          <div class="mono-meta" id="meeting-slide-indicator">Digital Screen: Slide 1 / 3 — System Architecture</div>
+        </div>
+
+        <!-- Interactive Virtual Whiteboard (Synced Live to the 3D Wall!) -->
+        <div class="glass-panel-sub whiteboard-panel" id="whiteboard-drawer" style="margin-top: var(--space-md);">
+          <div class="row-between">
+            <div>
+              <span class="kicker">Live Synced to 3D Room Wall</span>
+              <h3 class="card-title">Interactive Virtual Whiteboard</h3>
+            </div>
+            <div class="row-wrap">
+              <button type="button" class="btn btn-cyan" onclick="setWhiteboardColor('cyan')">Cyan Pen</button>
+              <button type="button" class="btn" onclick="setWhiteboardColor('purple')">Purple Pen</button>
+              <button type="button" class="btn btn-ghost" onclick="setWhiteboardColor('white')">White Pen</button>
+              <button type="button" class="btn btn-ghost" onclick="stampWhiteboardDiagram()">Stamp Diagram</button>
+              <button type="button" class="btn btn-danger" onclick="clearWhiteboard()">Clear Board</button>
+              <button type="button" class="btn btn-ghost" onclick="toggleWhiteboardPanel()">Hide</button>
+            </div>
+          </div>
+          <canvas id="whiteboard-canvas" width="900" height="280"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- 5. PROJECT COLLABORATION LAB & STUDENT COMMUNITY DETAILS  -->
+    <!-- ========================================================= -->
+    <section class="view-section" id="view-lab" aria-labelledby="lab-heading">
+      <div class="glass-panel">
+        <div class="row-between" style="margin-bottom: var(--space-md);">
+          <div>
+            <span class="kicker">Inter-University Teamwork &amp; Student Lounge</span>
+            <h2 class="section-title" id="lab-heading">Project Collaboration Lab &amp; Community</h2>
+            <p class="muted-copy">Form multi-university project squads for hackathons and capstones, discover skilled Sri Lankan student peers, and brainstorm in the shared idea space.</p>
+          </div>
+          <button type="button" class="btn btn-cyan" onclick="toggleProjectCreator()">
+            <i data-lucide="folder-plus" aria-hidden="true"></i> Create Group Project
+          </button>
+        </div>
+
+        <div class="glass-panel-sub hidden-panel" id="project-creator-panel">
+          <div class="row-between" style="margin-bottom: var(--space-sm);">
+            <h3 class="card-title">Launch New Group Project</h3>
+            <button type="button" class="btn btn-ghost" onclick="toggleProjectCreator()">Close</button>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label for="new-proj-title">Project Name</label>
+              <input id="new-proj-title" class="input" type="text" placeholder="e.g. LankaRail Smart Crowd Telemetry">
+            </div>
+            <div class="field">
+              <label for="new-proj-track">Track / Competition</label>
+              <input id="new-proj-track" class="input" type="text" placeholder="e.g. IESL Techno / Capstone">
+            </div>
+            <div class="field">
+              <label for="new-proj-roles">Roles Needed</label>
+              <input id="new-proj-roles" class="input" type="text" placeholder="e.g. Embedded IoT, UI/UX">
+            </div>
+          </div>
+          <div class="field" style="margin-top: var(--space-md);">
+            <label for="new-proj-desc">Project Vision</label>
+            <textarea id="new-proj-desc" class="textarea" placeholder="Describe the problem you are solving and how students from any faculty can contribute..."></textarea>
+          </div>
+          <div class="row-between" style="margin-top: var(--space-md);">
+            <span class="mono-meta" id="new-proj-status"></span>
+            <button type="button" class="btn btn-cyan" onclick="createGroupProject()">Launch Project</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Group Projects Grid -->
+      <div class="glass-panel is-cyan">
+        <div class="row-between" style="margin-bottom: var(--space-md);">
+          <h3 class="section-title">Active Group Projects</h3>
+          <span class="mono-meta">Click Join Squad or Launch 3D Room</span>
+        </div>
+        <div class="card-grid" id="lab-projects-grid"></div>
+      </div>
+
+      <!-- Member Discovery & Shared Idea Space -->
+      <div class="two-col-split">
+        <div class="glass-panel">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <div>
+              <span class="kicker">Member Discovery</span>
+              <h3 class="section-title">Sri Lankan Student Community</h3>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom: var(--space-md);">
+            <div class="field">
+              <label for="member-search">Search Name or Skill</label>
+              <input id="member-search" class="input" type="text" placeholder="e.g. PyTorch, AutoCAD, Finance..." oninput="renderCommunityMembers()">
+            </div>
+            <div class="field">
+              <label for="member-uni-filter">University</label>
+              <select id="member-uni-filter" class="select" onchange="renderCommunityMembers()">
+                <option value="ALL">All Universities</option>
+                <option value="UOM">UOM</option>
+                <option value="UOC">UOC</option>
+                <option value="UOP">UOP</option>
+                <option value="USJP">USJP</option>
+                <option value="UOK">UOK</option>
+                <option value="SLIIT">SLIIT</option>
+              </select>
+            </div>
+          </div>
+          <div class="stack-list" id="community-members-list"></div>
+        </div>
+
+        <div class="glass-panel is-cyan">
+          <div class="row-between" style="margin-bottom: var(--space-md);">
+            <div>
+              <span class="kicker is-purple">Student Lounge Brainstorm</span>
+              <h3 class="section-title">Shared Idea Space</h3>
+            </div>
+          </div>
+          <div class="form-grid" style="margin-bottom: var(--space-md);">
+            <div class="field">
+              <label for="new-idea-title">Quick Idea Spark</label>
+              <input id="new-idea-title" class="input" type="text" placeholder="Share a concept for campus or Sri Lanka...">
+            </div>
+            <div class="field">
+              <label for="new-idea-tag">Tag</label>
+              <select id="new-idea-tag" class="select">
+                <option value="Campus Utility">Campus Utility</option>
+                <option value="Social Impact">Social Impact</option>
+                <option value="Research Spark">Research Spark</option>
+                <option value="Startup MVP">Startup MVP</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" class="btn" style="width: 100%;" onclick="addSharedIdea()">Post Idea</button>
+            </div>
+          </div>
+          <div class="stack-list" id="shared-ideas-list"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <api-shim></api-shim>
+  <script src="script.js"></script>
+</body>
+</html>
